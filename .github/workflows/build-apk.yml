@@ -1,0 +1,44 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-apk.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'www/**'
+      - 'assets/**'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm ci
+      - name: Tambah platform Android
+        run: npx cap add android
+      - name: Sinkronkan aset web
+        run: npx cap sync
+      - name: Generate ikon aplikasi
+        run: npx --yes @capacitor/assets generate --android
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build APK debug
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Rilis APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0
+          name: Senja Strike v1.0
+          files: android/app/build/outputs/apk/debug/app-debug.apk
